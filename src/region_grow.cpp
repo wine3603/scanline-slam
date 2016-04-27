@@ -99,7 +99,6 @@ void region_grow::seeding(){
 								sign = true;
 //	static std::map< int, split_line> m_plane;
 //	static std::vector<m_plane> mer_plane;
-								//std::cout<<"..seeds = "<<seeds_;
 								make_patch(query_pt_itr, itr_1, itr_2);
 								extend(itr_2);
 								line_2->erase(itr_2++);
@@ -213,14 +212,16 @@ bool region_grow::coplanar_or_not (split_line::iterator &c){
 	e.z = s.z - c->vector.z;
 
 	size_t N  = plane_cloud.size();
-	float  RMS_grow = sqrt((N * sq(RMS) + sq(s.x*n.x + s.y*n.y + s.z*n.z - dis_plane ) + sq(e.x*n.x + e.y*n.y + e.z*n.z - dis_plane) )/(N+1));
+//std::cout<< " //siz " << N << std::endl;
+	float  RMS_grow = sqrt((N * sq(RMS) + sq(s.x*n.x + s.y*n.y + s.z*n.z - dis_plane ) + sq(e.x*n.x + e.y*n.y + e.z*n.z - dis_plane) )/(N+2));
 
+//std::cout<<" RMS_grow  "<<RMS_grow <<std::endl;
 	if(RMS_grow < theta_grow){
 		plane_cloud.points.push_back(s);
 		plane_cloud.points.push_back(e);
-//	return	recom_plane(plane_cloud);
+	return	recom_plane(plane_cloud);
 		//update plane n , d
-		return	true;
+//		return	true;
 	}
 		return false;
 }
@@ -275,68 +276,7 @@ double cop_start = pcl::getTime();
 }
 
 bool region_grow::plane_formular(PointCloudT &sigema){
-/*	PointT a,b,c,sig_b;
-	c.x = c.y = c.z = 0;
-	sig_b = a = b = c;
-///compute martic A (a,b,c)T and vec_b
-double formular_start = pcl::getTime();
-	for(int i = 0; i < sigema.size(); i++){
-		a.x += sigema.points[i].x*sigema.points[i].x;
-		a.y += sigema.points[i].x*sigema.points[i].y;
-		a.z += sigema.points[i].x*sigema.points[i].z;
-
-		b.x += sigema.points[i].x*sigema.points[i].y;
-		b.y += sigema.points[i].y*sigema.points[i].y;
-		b.z += sigema.points[i].y*sigema.points[i].z;
-
-		c.x += sigema.points[i].x*sigema.points[i].z;
-		c.y += sigema.points[i].z*sigema.points[i].y;
-		c.z += sigema.points[i].z*sigema.points[i].z;
-
-		sig_b.x += sigema.points[i].x;
-		sig_b.y += sigema.points[i].y;
-		sig_b.z += sigema.points[i].z;
-//std::cout<<" sig_b is "<< sig_b  <<std::endl;
-	}
-	float derta = det(a,b,c);
-	if (std::abs(derta)< theta_){
-//	std::cout<<" der(A) < theta_ ....det(A) is "<<derta<<std::endl;
-	return false;
-	}
-
-	PointT a_, b_, c_, m;
-	a_ = a;
-	a_.x = sig_b.x;
-	b_ = b;
-	b_.x = sig_b.y;
-	c_ = c;
-	c_.x = sig_b.z;
-	m.x = det(a_,b_,c_)/derta;
-
-	a_ = a;
-	a_.y = sig_b.x;
-	b_ = b;
-	b_.y = sig_b.y;
-	c_ = c;
-	c_.y = sig_b.z;
-	m.y = det(a_,b_,c_)/derta;
-
-	a_ = a;
-	a_.z = sig_b.x;
-	b_ = b;
-	b_.z = sig_b.y;
-	c_ = c;
-	c_.z = sig_b.z;
-	m.z = det(a_,b_,c_)/derta;
-	////compute plane normal n and distance d
-	dis_plane = 1.0f/sqrt(sq(m.x)+ sq(m.y) + sq(m.z));
-	n.x = dis_plane * m.x;
-	n.y = dis_plane * m.y;
-	n.z = dis_plane * m.z;
-///TODO gutmann checking dis >> 0 
-if(dis_plane < 0.4){
-return false;}
-*/	////least-square fit the plane by Root Mean Square
+////least-square fit the plane by Root Mean Square
 	double rms_t = pcl::getTime();
 	
 Matrix<float, 6, 4> SVD_A;
@@ -390,13 +330,7 @@ float      RMS = sqrt(svd_si /= sigema.size());
 //	double RMS_time = pcl::getTime();
 	//std::cout<<"RMS time .."<<rms_t - n_d_over<<" RMS___t "<<RMS_time - rms_t<< std::endl;
 	if( RMS <= theta_seed){//TODO
-plane_cloud.clear();//TODO
-	plane_cloud = sigema;
-//std::cout<<" det A : "<<derta <<"  n is :" << n<< "  d is :" <<dis_plane<<std::endl;
-//normals.points.push_back(n);
-//for (int i = 0; i < 6; i++){
-//std::cout<<" point "<< i <<" is " <<sigema.points[i]<<std::endl;
-//}
+//plane_cloud.clear();//TODO
 		return true;
 	}
 	else return false;
@@ -425,12 +359,17 @@ void region_grow::make_patch (split_line::iterator &a, split_line::iterator &b, 
 		planes.back().lines = patch_map.back();
 //		std::cout<<" RMS... "<<RMS<<std::endl;
 		plane_cloud.clear();
+		plane_cloud.points.push_back(a->end_point);
+		plane_cloud.points.push_back(a->end_point_e);
+		plane_cloud.points.push_back(b->end_point);
+		plane_cloud.points.push_back(b->end_point_e);
+		plane_cloud.points.push_back(c->end_point);
+		plane_cloud.points.push_back(c->end_point_e);
 	}
 	Plane new_plane;
 	new_plane.RMS = RMS;
 	new_plane.n  = n;
 	new_plane.d = dis_plane;	
-//	new_plane.m = m_;
 	new_plane.size = 3;
 	planes.push_back(new_plane);
 	
@@ -460,16 +399,16 @@ return normals;
 
 
 bool region_grow::recom_plane(PointCloudT &sigema){
-	
-Matrix<float, 6, 4> SVD_A;
-int i  = sigema.size();
-SVD_A  <<
-sigema.points[i].x, sigema.points[i].y, sigema.points[i].z, -1.0 ,
-sigema.points[i-1].x, sigema.points[i-1].y, sigema.points[i-1].z, -1.0 ,
-sigema.points[i-2].x, sigema.points[i-2].y, sigema.points[i-2].z, -1.0 ,
-sigema.points[i-3].x, sigema.points[i-3].y, sigema.points[i-3].z, -1.0 ,
-sigema.points[i-4].x, sigema.points[i-4].y, sigema.points[i-4].z, -1.0 ,
-sigema.points[i-5].x, sigema.points[i-5].y, sigema.points[i-5].z, -1.0 ;
+int siz  = sigema.size();	
+if (siz < 6)
+return false;
+MatrixXf SVD_A(siz,4);
+for(int i = 0; i< siz;  i++){
+SVD_A (i,0) =  sigema.points[i].x;
+SVD_A (i,1) =  sigema.points[i].y;
+SVD_A (i,2) =  sigema.points[i].z;
+SVD_A (i,3) =  -1.0;
+}
 JacobiSVD<MatrixXf> svd(SVD_A, ComputeThinU | ComputeThinV);
 
 	Matrix<float, 3,1> n_, pi, n_svd, n_svd_norm;
@@ -501,12 +440,12 @@ n_svd *= -1;
 
 
 float      RMS = sqrt(svd_si /= sigema.size());
-//std::cout<<"RMS =  "<<RMS <<" rms_SVD = ::" <<RMS_svd <<std::endl;
+//std::cout<<"RMS =  "<<RMS <<std::endl;
 //	double RMS_time = pcl::getTime();
 	//std::cout<<"RMS time .."<<rms_t - n_d_over<<" RMS___t "<<RMS_time - rms_t<< std::endl;
-	if( RMS <= theta_seed){//TODO
-plane_cloud.clear();//TODO
-	plane_cloud = sigema;
+	if( RMS <= theta_grow){//TODO
+//plane_cloud.clear();//TODO
+//	plane_cloud = sigema;
 dis_plane = dis_svd;  
 
 n.x = n_svd(0,0);
@@ -515,7 +454,10 @@ n.z = n_svd(2,0);
 //std::cout<<" det A : "<<derta <<"  n is :" << n<< "  d is :" <<dis_plane<<std::endl;
 		return true;
 	}
-	else return false;
+	else{
+	plane_cloud.points.pop_back();
+	plane_cloud.points.pop_back();
+ return false;}
 }
 
 split_image region_grow::merge_plane(){
@@ -535,7 +477,7 @@ split_image region_grow::merge_plane(){
 				split_line a  =  itr_2->lines;
 				comtru_no++;
 				split_line::iterator a_itr = a.begin();
-			std::cout<<" d1 " << d1<< " d2 " <<d2 <<" n1 " <<n1<<" n2 :" << n2<<std::endl;
+//			std::cout<<" d1 " << d1<< " d2 " <<d2 <<" n1 " <<n1<<" n2 :" << n2<<std::endl;
 				for (; a_itr != a.end();){
 					split_point pt =region_grow::get_data(a_itr);
 					new_patch.push_back(pt);

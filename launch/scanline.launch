@@ -1,0 +1,5 @@
+<launch>
+	<node pkg="scanline-slam" type="scanline_group" name="scanline_group" output="screen" />
+	<node pkg="rviz" type="rviz" name="rviz" required="true" />
+</launch>
+	

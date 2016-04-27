@@ -20,6 +20,8 @@ namespace region_growing{
 	typedef pcl::PointCloud<PointT> PointCloudT;
 	typedef struct {PointT end_point; 
 		size_t index;
+		PointT end_point_e;
+		size_t index_e;
 		size_t length;
 		PointT vector;
 		size_t height;} split_point;

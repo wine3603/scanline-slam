@@ -77,7 +77,18 @@ class scan_group
 				Split_Out.push_back(edge_pt);
 				//	std::cout<<Split_Out.size()<<std::endl;
 			}
-
+/*
+PointCloudT Minus_Edge;
+for(int r = 0; r< pcd.height;r++){
+ for(int c = 0; c< pcd.width; c++){
+  if (c >0){
+	if(fabs(pcd.at(c,r).intensity - pcd.at(c-1,r).intensity)> 0.034364*pcd.at(c-1,r).intensity)
+	Minus_Edge.points.push_back(pcd.at(c,r));
+	}
+    }
+}
+std::cout<< "size of Minus edge "<< Minus_Edge.size()<<std::endl;
+*/
 			frame_ = "dynamixel_base";
 			PointCloudT edge_cloud;
 			edge_cloud.header.frame_id = frame_;
@@ -87,10 +98,8 @@ class scan_group
 				for (; width_itr< height_itr->end(); width_itr++){
 					edge_cloud.push_back(width_itr->end_point);
 				}	
-			}	 
-			//std::cout<<"size of edge pcd  "<<edge_cloud.size()<<"height..."<<edge_cloud.height<<"...width...."<<edge_cloud.width<<std::endl;
-
-
+			}
+	 
 			region_growing::region_grow reg_grow;
 			split_image planes = reg_grow.grow(Split_Out);
 			pcl::PointCloud<pcl::PointXYZRGB> color_plane;

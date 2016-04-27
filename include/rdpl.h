@@ -19,6 +19,7 @@
 #include <region_grow.h>
 
 using namespace std;
+using namespace Eigen;
 using namespace region_growing;
 typedef pcl::PointXYZI PointT;
 typedef pcl::PointCloud<PointT> PointCloudT;
@@ -130,6 +131,8 @@ int rdp_implimentation(       PointCloudT& input,
         // Furthest point nearer than tolerance?
         if ( max_squared_distance <= e )
         {
+	output.back().end_point_e = floater;
+	output.back().index_e = index_of_floater;
             output.push_back( rdp_stack.back( ) );
             rdp_stack.pop_back( );
             anchor = floater;
@@ -149,7 +152,53 @@ int rdp_implimentation(       PointCloudT& input,
             rdp_stack.push_back( stack_element );
         }
     }
-//std::cout<<"input.."<<input.size()<<"..output"<<output.size()<<"...epsilon: "<<e<<std::endl;
+//////least square opt of end points 2016 04 26
+ split_line::iterator itr_r = output.begin();
+ for (;itr_r != output.end();){
+
+	 int n = itr_r->index_e - itr_r->index;
+float RMS = 0;
+	 if ( n >= 5){
+//		std::cout<< "n is "<<n;
+		 MatrixXf m(n, 3);
+		 for(int i = 0; i < n; i++){
+			 m(i,0)=input.points[itr_r->index + i].x;
+			 m(i,1)=input.points[itr_r->index + i].y;
+			 m(i,2)= 1.0;
+		 }
+		 JacobiSVD<MatrixXf> svd(m, ComputeThinU | ComputeThinV);
+		 Matrix <float, 3, 3> m_v = svd.matrixV();
+		 Matrix <float, 3, 1> L;//L is the line formular ax + by +c = 0
+		 L <<m_v(0,2), m_v(1,2), m_v(2,2);
+		// for(int i = 0; i < n; i++){
+		//	Matrix <float, 1, 3> m_p;
+		//	PointT pt = input.points[itr_r->index+i];
+		//	
+		//	m_p << pt.x, pt.y, -1;
+		//	RMS += m_p * L; 
+		// }
+		PointT pt = itr_r->end_point;
+		float dis = fabs(pt.x*L(0,0) + pt.y*L(1,0) +L(2,0))/sqrt( L(0,0)*L(0,0) + L(1,0)*L(1,0));
+	Matrix <float, 2,2> A;// qiu chui zu
+	A(0,0) = L(0,0);
+	A(0,1) = L(1,0);
+	A(1,0) = L(1,0);
+	A(1,1) = -L(0,0);
+	Vector2f  b, p;
+	float x_0 = pt.x;
+	float y_0 = pt.y;
+	b<< -L(2,0), (L(1,0)*x_0 - L(0,0)*y_0);
+ ColPivHouseholderQR<Matrix2f>  dec(A);
+ p = dec.solve(b); 
+//	p = A.solve(b);
+	//	std::cout<< " Index: " <<itr_r->index<<"L is " <<L<< " dis " << dis <<" \n";
+//	std::cout<<" pt is " << pt<<" p Is " << p<<"\n";
+itr_r->end_point.x = p(0,0);
+itr_r->end_point.y = p(1,0);
+	 }
+//std::cout<<"start pt.."<<itr_r->end_point<<"..index :"<<itr_r->index<<" end pt ." << itr_r-> end_point_e<<" end index "<< itr_r->index_e<< "\n "<<std::endl;
+++itr_r;
+}
     // Success
     return 0;
 };

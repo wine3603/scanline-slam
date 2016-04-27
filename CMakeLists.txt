@@ -157,6 +157,8 @@ target_link_libraries (scanline_group ${catkin_LIBRARIES}
 			#libvtkCommon.so
 			#libvtkFiltering.so
 			)
+add_executable(urg_zhang src/urg_zhang.cpp)
+target_link_libraries( urg_zhang ${catkin_LIBRARIES} )
 
 #############
 ## Install ##
